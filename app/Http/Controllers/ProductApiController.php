@@ -47,7 +47,7 @@ class ProductApiController extends Controller
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $token
-        ])->get($domain.'/api/parts/inventory?pageSize=1000&number='.request()->number);
+        ])->get($domain.'/api/parts/inventory?pageSize=100000&number='.request()->number);
         
 
         $status = $response->status();
@@ -77,7 +77,7 @@ class ProductApiController extends Controller
         ])->post($domain.'/api/logout');
 
         return response()->json([
-            'status' => 'Success',
+            'status'   => 'Success',
             "quantity" => $inventory
         ]);
         
