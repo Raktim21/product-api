@@ -8,5 +8,8 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
-Route::get('product/quality', [ProductApiController::class, 'quality']);
-Route::get('product/quantity/all', [ProductApiController::class, 'qualityAll']);
+Route::get('product/quantity', [ProductApiController::class, 'quantity']);
+Route::get('product/quantity/all', [ProductApiController::class, 'quantityAll']);
+Route::get('vendors', [ProductApiController::class, 'vendor']);
+
+Route::post('product/sales', [ProductApiController::class, 'storeSales']);
