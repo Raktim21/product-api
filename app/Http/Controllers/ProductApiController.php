@@ -113,7 +113,7 @@ class ProductApiController extends Controller
 
             foreach ($data['results'] as $product) {
                 
-                $databseCheck = Products::where('part_number', $product['partNumber'])->first();
+                $databseCheck = Products::where('partNumber', $product['partNumber'])->first();
 
                 if ($databseCheck) {
 
@@ -124,7 +124,7 @@ class ProductApiController extends Controller
                 }else {
 
                     Products::create([
-                        'part_number'     => $product['partNumber'],
+                        'partNumber'     => $product['partNumber'],
                         'quantity'        => $product['quantity'],
                         'partDescription' => $product['partDescription'],
                     ]);
