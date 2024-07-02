@@ -32,56 +32,50 @@ class ProductApiController extends Controller
         ], [
             'Content-Type: application/json'
         ]);
-        
-        $status = $response->status();
 
-        if ($status != 200) {
-            return response()->json([
-                'status' => 'Error',
-                'message' => $response->json()['message']
-            ], $status);
-        }
-
-        $token = $response->json()['token'];
-        
-        
-
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $token
-        ])->get($domain.'/api/parts/inventory?pageSize=100000&number='.request()->number);
-        
-
-        $status = $response->status();
-
-        if ($status != 200) {
-            return response()->json([
-                'status' => 'Error',
-                'message' => $response->json()['message']
-            ], $status);
-        }
-
-        $data = $response->json();
-
-        $inventory = null;
-
-        foreach ($data['results'] as $product) {
-            
-            if ($product['partNumber'] == request()->number) {
-                $inventory  = $product['quantity'];
+        try {
                 
-                break;
+            $token = $response->json()['token'];
+            
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $token
+            ])->get($domain.'/api/parts/inventory?pageSize=100000&number='.request()->number);
+            
+
+            $data = $response->json();
+
+            $inventory = null;
+
+            foreach ($data['results'] as $product) {
+                
+                if ($product['partNumber'] == request()->number) {
+                    $inventory  = $product['quantity'];
+                    break;
+                }
             }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+            ])->post($domain.'/api/logout');
+
+            return response()->json([
+                'status'   => 'Success',
+                "quantity" => $inventory
+            ]);
+
+
+        } catch (\Throwable $th) {
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+            ])->post($domain.'/api/logout');
+
+            return response()->json([
+                'status' => 'Error',
+                'message' => $th->getMessage()
+            ], 500);
         }
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer '.$token,
-        ])->post($domain.'/api/logout');
-
-        return response()->json([
-            'status'   => 'Success',
-            "quantity" => $inventory
-        ]);
         
         
     }
@@ -103,68 +97,62 @@ class ProductApiController extends Controller
             'Content-Type: application/json'
         ]);
         
-        $status = $response->status();
 
-        if ($status != 200) {
-            return response()->json([
-                'status' => 'Error',
-                'message' => $response->json()['message']
-            ], $status);
-        }
+        try {
+            $token = $response->json()['token'];
 
-        $token = $response->json()['token'];
-        
-        
-
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $token
-        ])->get($domain.'/api/parts/inventory?pageSize=100000');
-        
-
-        $status = $response->status();
-
-        if ($status != 200) {
-            return response()->json([
-                'status' => 'Error',
-                'message' => $response->json()['message']
-            ], $status);
-        }
-
-        $data = $response->json();
-
-        $allData = [];
-
-        foreach ($data['results'] as $product) {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $token
+            ])->get($domain.'/api/parts/inventory?pageSize=100000');
             
-            $databseCheck = Products::where('part_number', $product['partNumber'])->first();
 
-            if ($databseCheck) {
+            $data = $response->json();
 
-                if ($databseCheck->quantity != number_format($product['quantity'], 2, '.', '')) {
+            $allData = [];
+
+            foreach ($data['results'] as $product) {
+                
+                $databseCheck = Products::where('part_number', $product['partNumber'])->first();
+
+                if ($databseCheck) {
+
+                    if ($databseCheck->quantity != number_format($product['quantity'], 2, '.', '')) {
+                        array_push($allData, $product);
+                    }
+
+                }else {
+
+                    Products::create([
+                        'part_number'     => $product['partNumber'],
+                        'quantity'        => $product['quantity'],
+                        'partDescription' => $product['partDescription'],
+                    ]);
+
                     array_push($allData, $product);
                 }
-
-            }else {
-
-                Products::create([
-                    'part_number'     => $product['partNumber'],
-                    'quantity'        => $product['quantity'],
-                    'partDescription' => $product['partDescription'],
-                ]);
-
-                array_push($allData, $product);
             }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+            ])->post($domain.'/api/logout');
+
+            return response()->json([
+                'status'   => 'Success',
+                "data" => $allData
+            ],200);
+
+
+        } catch (\Throwable $th) {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+            ])->post($domain.'/api/logout');
+
+            return response()->json([
+                'status' => 'Error',
+                'message' => $th->getMessage()
+            ], 500);
         }
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer '.$token,
-        ])->post($domain.'/api/logout');
-
-        return response()->json([
-            'status'   => 'Success',
-            "data" => $allData
-        ],200);
         
         
     }
@@ -197,15 +185,6 @@ class ProductApiController extends Controller
             ], [
                 'Content-Type: application/json'
             ]);
-            
-            $status = $response->status();
-    
-            if ($status != 200) {
-                return response()->json([
-                    'status' => 'Error',
-                    'message' => $response->json()['message']
-                ], $status);
-            }
     
             $token = $response->json()['token'];
     
@@ -265,6 +244,12 @@ class ProductApiController extends Controller
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$token,
             ])->post($domain.'/api/logout');
+
+
+            return response()->json([
+                'status' => 'Error',
+                'message' => $th->getMessage()
+            ], 500);
         }
 
     }
